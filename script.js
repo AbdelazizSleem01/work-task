@@ -5,6 +5,10 @@ const orderModal = document.getElementById("orderModal");
 const addOrderBtn = document.getElementById("addOrderBtn");
 const closeModal = document.getElementById("closeModal");
 
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
+
 const orderForm = document.getElementById("orderForm");
 const ordersTableBody = document.getElementById("ordersTableBody");
 
@@ -284,24 +288,38 @@ orderForm.addEventListener("submit", (e) => {
     document.body.style.overflow = "";
 });
 
+let deleteId = null;
+
+const header = document.querySelector(".header");
+
+// Function to handle scroll
+function handleScroll() {
+    if (window.scrollY > 100) {
+        header.classList.add("fixed");
+        document.body.classList.add("fixed-header");
+    } else {
+        header.classList.remove("fixed");
+        document.body.classList.remove("fixed-header");
+    }
+}
+
+window.addEventListener("scroll", handleScroll);
+
 ordersTableBody.addEventListener("click", (e) => {
+    const button = e.target.closest(".action-btn");
+    if (!button) return;
+
     const row = e.target.closest("tr");
     if (!row || !row.dataset.id) return;
     const id = parseInt(row.dataset.id);
 
-    if (e.target.classList.contains("delete-btn")) {
-        if (confirm(currentLang === "ar" ? "هل أنت متأكد من الحذف؟" : "Are you sure?")) {
-            orders = orders.filter(o => o.id !== id);
-            const totalPages = Math.ceil(orders.length / itemsPerPage);
-            if (currentPage > totalPages) {
-                currentPage = Math.max(1, totalPages);
-            }
-            localStorage.setItem("orders", JSON.stringify(orders));
-            renderTable();
-        }
+    if (button.classList.contains("delete-btn")) {
+        deleteId = id;
+        deleteModal.classList.add("show");
+        document.body.style.overflow = "hidden";
     }
 
-    if (e.target.classList.contains("edit-btn")) {
+    if (button.classList.contains("edit-btn")) {
         const order = orders.find(o => o.id === id);
         document.getElementById("customerName").value = order.customer;
         document.getElementById("product").value = order.product;
@@ -313,5 +331,34 @@ ordersTableBody.addEventListener("click", (e) => {
         editId = id;
         orderModal.classList.add("show");
         document.body.style.overflow = "hidden";
+    }
+});
+
+cancelDelete.addEventListener("click", () => {
+    deleteModal.classList.remove("show");
+    document.body.style.overflow = "";
+    deleteId = null;
+});
+
+confirmDelete.addEventListener("click", () => {
+    if (deleteId) {
+        orders = orders.filter(o => o.id !== deleteId);
+        const totalPages = Math.ceil(orders.length / itemsPerPage);
+        if (currentPage > totalPages) {
+            currentPage = Math.max(1, totalPages);
+        }
+        localStorage.setItem("orders", JSON.stringify(orders));
+        renderTable();
+    }
+    deleteModal.classList.remove("show");
+    document.body.style.overflow = "";
+    deleteId = null;
+});
+
+window.addEventListener("click", (e) => {
+    if (e.target === deleteModal) {
+        deleteModal.classList.remove("show");
+        document.body.style.overflow = "";
+        deleteId = null;
     }
 });
